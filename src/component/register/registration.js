@@ -1,13 +1,16 @@
 import React  from 'react';
 import {} from "react-bootstrap";
 import '../../index.css';
+
 export default class SignUp extends React.Component {
   constructor(props){
     super(props)
   this.state = {email: "",
                 password: "",
                 name: "",
-                gender: ""
+                gender: "",
+                error: "",
+                success: ""
                 }
   this.changeHandler = this.changeHandler.bind(this);
   this.submitHandler = this.submitHandler.bind(this);
@@ -17,15 +20,37 @@ export default class SignUp extends React.Component {
     console.log(event.target.name);
     this.setState({[event.target.name]: event.target.value});  
   }
-
-  submitHandler(event) {
-    console.log("submit button called");
-    
-    // this.setState({event.target.name: event.target.value});  
+  validateForm(){
+    if (this.state.email === '' || this.state.password === '' || 
+    this.state.gender === '' || this.state.name=== ''){
+      console.log("Please Provide Proper Input");
+      return false;
+    }
+    return true;
   }
+  submitHandler(event) {
+    event.preventDefault();
+    console.log("submit button called");
+    if (this.validateForm()){
+    var locStore = window.localStorage;
+    locStore.setItem(this.state['email'], JSON.stringify(this.state));
+    console.log("local Storage Complete");
+    this.setState({success: "User Successfully Created", error: ""})  
+  }else{
+    this.setState({error: "Please provide Correct Input", success: ""})
+  }
+}
 
   render() {
+        let text;
+        if (this.state.error){
+          text = <div style={{color:"red", text:"center"}}><p>{this.state.error}</p></div>;
+        }
+        else{
+        text = <div style={{color:"green", text:"center"}}> {this.state.success}</div>
+        }
       return (
+        <div>
           <form onSubmit={this.submitHandler}>
               <h3>Sign Up</h3>
 
@@ -56,6 +81,8 @@ export default class SignUp extends React.Component {
 
               <button type="submit" className="btn btn-primary btn-block">Sign Up</button>
           </form>
+          {text}
+          </div>
       );
   }
 }
