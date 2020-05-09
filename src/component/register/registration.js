@@ -8,7 +8,7 @@ export default class SignUp extends React.Component {
   this.state = {email: "",
                 password: "",
                 name: "",
-                gender: "",
+                gender: "MALE",
                 error: "",
                 success: ""
                 }
@@ -33,10 +33,14 @@ export default class SignUp extends React.Component {
     console.log("submit button called");
     if (this.validateForm()){
     var locStore = window.localStorage;
-    locStore.setItem(this.state['email'], JSON.stringify(this.state));
+    if (locStore.getItem(this.state.email)){
+        this.setState({success: "", error:"User Already Exists"});
+    }else{
+    locStore.setItem(this.state.email, JSON.stringify(this.state));
     console.log("local Storage Complete");
     this.setState({success: "User Successfully Created", error: ""})  
-  }else{
+  }
+}else{
     this.setState({error: "Please provide Correct Input", success: ""})
   }
 }
@@ -63,9 +67,9 @@ export default class SignUp extends React.Component {
                   <label>Gender</label>
                   
   <select className="form-control" id="sel1" name="gender" onChange={this.changeHandler}>
-    <option>MALE</option>
-    <option>FEMALE</option>
-    <option>OTHERS</option>
+    <option value="MALE">MALE</option>
+    <option value="FEMALE">FEMALE</option>
+    <option value="OTHERS">OTHERS</option>
   </select>
               </div>
 
