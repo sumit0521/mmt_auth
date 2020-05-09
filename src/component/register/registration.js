@@ -5,16 +5,62 @@ import '../../index.css';
 export default class SignUp extends React.Component {
   constructor(props){
     super(props)
-  this.state = {email: "",
+  
+    this.state = {email: "",
                 password: "",
                 name: "",
                 gender: "MALE",
                 error: "",
                 success: ""
                 }
+  // this.state = this.initialState;
   this.changeHandler = this.changeHandler.bind(this);
   this.submitHandler = this.submitHandler.bind(this);
   }
+  indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
+  dataBase = null;
+
+  startDB = () => {
+    this.dataBase = this.indexedDB.open("user", 1);
+    
+    this.dataBase.onupgradeneeded = (event) => {
+      let db = event.target.result;
+      // continue to work with database using db object
+      if (!db.objectStoreNames.contains('registration')) { 
+        db.createObjectStore('registration', {keyPath: 'email'});
+    }
+  };
+
+    this.dataBase.onerror = () => {
+      console.error("Error", this.dataBase.error);
+    };
+    
+    this.dataBase.onsuccess = (event) => {
+      let transaction = event.target.result.transaction("registration", "readwrite");
+      let registration = transaction.objectStore("registration");
+      console.log(registration.get(this.state.email));
+      var getResult = registration.get(this.state.email);
+      
+      getResult.onsuccess = () => {
+        if(getResult.result){
+        this.setState({success: "", error:"User Already Exists"});
+        }else{
+          let request = registration.add(this.state);
+          request.onsuccess = () => {
+            console.log("IndexedDb Storage Complete");
+            this.setState({success: "User Successfully Created", error: ""})    
+          }
+          request.onerror = () => {
+            this.setState({error: "Some Error Occured", success: ""})
+          }
+        }
+      }
+      getResult.onerror = () => {
+        this.setState({error: "Some Error Occured", success: ""})
+      }
+        
+  }
+    };
 
   changeHandler(event) {
     console.log(event.target.name);
@@ -30,17 +76,10 @@ export default class SignUp extends React.Component {
   }
   submitHandler(event) {
     event.preventDefault();
-    console.log("submit button called");
-    if (this.validateForm()){
-    var locStore = window.localStorage;
-    if (locStore.getItem(this.state.email)){
-        this.setState({success: "", error:"User Already Exists"});
-    }else{
-    locStore.setItem(this.state.email, JSON.stringify(this.state));
-    console.log("local Storage Complete");
-    this.setState({success: "User Successfully Created", error: ""})  
-  }
-}else{
+    if (this.validateForm()){ 
+      this.startDB();
+    }
+else{
     this.setState({error: "Please provide Correct Input", success: ""})
   }
 }

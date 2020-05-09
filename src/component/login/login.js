@@ -13,6 +13,37 @@ export default class Login extends Component {
   this.submitHandler = this.submitHandler.bind(this);
   }
 
+  indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
+  dataBase = null;
+  userResult = null;
+  validateUser = () => {
+    this.dataBase = this.indexedDB.open("user", 1);
+    
+    this.dataBase.onupgradeneeded = () => {
+      
+  };
+
+    this.dataBase.onerror = () => {
+      console.error("Error", this.dataBase.error);
+    };
+    
+    this.dataBase.onsuccess = (event) => {
+      let transaction = event.target.result.transaction("registration", "readwrite");
+      let registration = transaction.objectStore("registration");
+      var getResult = registration.get(this.state.email);
+      
+      getResult.onsuccess = () => {
+        this.userResult = getResult.result;
+      }
+      getResult.onerror = () => {
+        console.log("Some Error Occurred");
+      }
+        
+  }
+    };
+
+
+
   changeHandler(event) {
     console.log(event.target.name);
     this.setState({[event.target.name]: event.target.value});  
@@ -30,10 +61,9 @@ export default class Login extends Component {
     event.preventDefault();
     if (this.validateForm()){
         console.log("submit button called");
-        var userObject = window.localStorage.getItem(this.state['email']);
-        if (userObject && JSON.parse(userObject)['password'] === this.state.password){
-          var userObjectJson = JSON.parse(userObject);
-          this.setState({success: "Login Successful. Welcome " + userObjectJson['name'], error:""});
+        this.validateUser();
+        if (this.userResult && this.userResult['password'] === this.state.password){
+          this.setState({success: "Login Successful. Welcome " + this.userResult['name'], error:""});
         }else{
           this.setState({error: "Please Provide Correct Input", success: ""});
   }
