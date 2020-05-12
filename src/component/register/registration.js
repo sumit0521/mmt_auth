@@ -1,6 +1,7 @@
 import React  from 'react';
 import {} from "react-bootstrap";
 import '../../index.css';
+import axios from 'axios';
 
 export default class SignUp extends React.Component {
   constructor(props){
@@ -11,56 +12,29 @@ export default class SignUp extends React.Component {
                 name: "",
                 gender: "MALE",
                 error: "",
-                success: ""
+                success: "",
+                resp: ""
                 }
   // this.state = this.initialState;
   this.changeHandler = this.changeHandler.bind(this);
   this.submitHandler = this.submitHandler.bind(this);
   }
-  indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
-  dataBase = null;
 
-  startDB = () => {
-    this.dataBase = this.indexedDB.open("user", 1);
-    
-    this.dataBase.onupgradeneeded = (event) => {
-      let db = event.target.result;
-      // continue to work with database using db object
-      if (!db.objectStoreNames.contains('registration')) { 
-        db.createObjectStore('registration', {keyPath: 'email'});
-    }
-  };
+  createUser = () => {
+    var jsonBody = {'email': this.state.email,
+                'name': this.state.name,
+                'password': this.state.password,
+                'gender': this.state.gender}
+    axios.post("http://localhost:8080/apis/register", jsonBody)
+    .then(response => {
+      console.log("fdsfds", response);
+      this.setState({resp: response.data})
+    })
+            .catch( response => {
+              console.log(response)
+            })
+      }
 
-    this.dataBase.onerror = () => {
-      console.error("Error", this.dataBase.error);
-    };
-    
-    this.dataBase.onsuccess = (event) => {
-      let transaction = event.target.result.transaction("registration", "readwrite");
-      let registration = transaction.objectStore("registration");
-      console.log(registration.get(this.state.email));
-      var getResult = registration.get(this.state.email);
-      
-      getResult.onsuccess = () => {
-        if(getResult.result){
-        this.setState({success: "", error:"User Already Exists"});
-        }else{
-          let request = registration.add(this.state);
-          request.onsuccess = () => {
-            console.log("IndexedDb Storage Complete");
-            this.setState({success: "User Successfully Created", error: ""})    
-          }
-          request.onerror = () => {
-            this.setState({error: "Some Error Occured", success: ""})
-          }
-        }
-      }
-      getResult.onerror = () => {
-        this.setState({error: "Some Error Occured", success: ""})
-      }
-        
-  }
-    };
 
   changeHandler(event) {
     console.log(event.target.name);
@@ -77,7 +51,16 @@ export default class SignUp extends React.Component {
   submitHandler(event) {
     event.preventDefault();
     if (this.validateForm()){ 
-      this.startDB();
+      this.createUser();
+      if (this.state.resp && this.state.resp.success){
+        this.setState({success: this.state.resp.message, error: "", resp: ""})
+      }
+      else if(this.state.resp && !this.state.resp.success){
+        this.setState({success: "", error: this.state.resp.message, resp:""})
+      }
+      else{
+        this.setState({success: "", error: "Please provide proper input", resp:""})
+      }
     }
 else{
     this.setState({error: "Please provide Correct Input", success: ""})

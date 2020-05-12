@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import '../../index.css';
+import axios from 'axios';
 
 export default class Login extends Component {
   constructor(props){
@@ -7,42 +8,25 @@ export default class Login extends Component {
   this.state = {email: "",
                 password: "",
                 error: "",
-                success: ""
+                success: "",
+                resp: ""
                 }
   this.changeHandler = this.changeHandler.bind(this);
   this.submitHandler = this.submitHandler.bind(this);
   }
 
-  indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
-  dataBase = null;
-  userResult = null;
+  
+
   validateUser = () => {
-    this.dataBase = this.indexedDB.open("user", 1);
-    
-    this.dataBase.onupgradeneeded = () => {
-      
-  };
-
-    this.dataBase.onerror = () => {
-      console.error("Error", this.dataBase.error);
-    };
-    
-    this.dataBase.onsuccess = (event) => {
-      let transaction = event.target.result.transaction("registration", "readwrite");
-      let registration = transaction.objectStore("registration");
-      var getResult = registration.get(this.state.email);
-      
-      getResult.onsuccess = () => {
-        this.userResult = getResult.result;
+    console.log("inside validateUser", this.state);
+    axios.post("http://localhost:8080/apis/login", this.state)
+    .then(response => {
+      this.setState({resp: response.data})
+    })
+            .catch( response => {
+              console.log(response)
+            })
       }
-      getResult.onerror = () => {
-        console.log("Some Error Occurred");
-      }
-        
-  }
-    };
-
-
 
   changeHandler(event) {
     console.log(event.target.name);
@@ -62,12 +46,15 @@ export default class Login extends Component {
     if (this.validateForm()){
         console.log("submit button called");
         this.validateUser();
-        if (this.userResult && this.userResult['password'] === this.state.password){
-          this.setState({success: "Login Successful. Welcome " + this.userResult['name'], error:""});
-        }else{
+        if (this.state.resp && this.state.resp.success){
+           this.setState({success: "Login Successful. Welcome " + this.state.resp.data.name,
+           resp: "",
+            error:""});
+         }
+        else{
           this.setState({error: "Please Provide Correct Input", success: ""});
-  }
         }
+      }
 else{
     this.setState({error: "Please Fill All Fields", success: ""});
   }
